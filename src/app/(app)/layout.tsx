@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NotebookText } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
+import { NavProgress } from "@/components/nav-progress";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -24,6 +25,7 @@ export default async function AppLayout({
             <span className="font-heading text-[17px] font-bold tracking-tight">
               Catatan Hutang
             </span>
+            <NavProgress />
           </Link>
           <div className="flex items-center gap-1.5">
             {user?.email && (

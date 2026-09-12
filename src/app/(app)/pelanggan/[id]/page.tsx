@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, HandCoins, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NavProgress } from "@/components/nav-progress";
 import {
   Empty,
   EmptyDescription,
@@ -52,6 +53,7 @@ export default async function PelangganDetailPage({
       >
         <ArrowLeft data-icon="inline-start" />
         Kembali
+        <NavProgress />
       </Button>
 
       <div

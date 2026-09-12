@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Search, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NavProgress } from "@/components/nav-progress";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Empty,
   EmptyDescription,
@@ -16,7 +18,6 @@ import {
 } from "@/components/ui/empty";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -32,6 +33,7 @@ import type { PelangganDenganSaldo } from "@/lib/types";
 export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -52,6 +54,7 @@ export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
     }
 
     toast.success(`${nama} dihapus.`);
+    setOpenId(null);
     router.refresh();
   }
 
@@ -132,10 +135,14 @@ export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
                       {lunas ? "Lunas" : "Belum lunas"}
                     </span>
                   </div>
+                  <NavProgress />
                 </Link>
 
                 {lunas && (
-                  <AlertDialog>
+                  <AlertDialog
+                    open={openId === p.id}
+                    onOpenChange={(open) => setOpenId(open ? p.id : null)}
+                  >
                     <AlertDialogTrigger
                       render={
                         <Button
@@ -158,13 +165,17 @@ export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction
+                        <AlertDialogCancel disabled={deletingId === p.id}>
+                          Batal
+                        </AlertDialogCancel>
+                        <Button
+                          variant="destructive"
                           disabled={deletingId === p.id}
                           onClick={() => handleDelete(p.id, p.nama)}
                         >
+                          {deletingId === p.id && <Spinner />}
                           {deletingId === p.id ? "Menghapus..." : "Hapus"}
-                        </AlertDialogAction>
+                        </Button>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
