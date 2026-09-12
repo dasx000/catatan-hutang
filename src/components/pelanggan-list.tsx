@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Search, Trash2, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Empty,
@@ -11,17 +14,46 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { formatRelatif, formatRupiah } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
 import type { PelangganDenganSaldo } from "@/lib/types";
 
 export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return data;
     return data.filter((p) => p.nama.toLowerCase().includes(q));
   }, [data, query]);
+
+  async function handleDelete(id: string, nama: string) {
+    setDeletingId(id);
+    const supabase = createClient();
+    const { error } = await supabase.from("pelanggan").delete().eq("id", id);
+    setDeletingId(null);
+
+    if (error) {
+      toast.error("Gagal menghapus pelanggan: " + error.message);
+      return;
+    }
+
+    toast.success(`${nama} dihapus.`);
+    router.refresh();
+  }
 
   if (data.length === 0) {
     return (
@@ -60,10 +92,13 @@ export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
           {filtered.map((p) => {
             const lunas = p.saldo <= 0;
             return (
-              <li key={p.id}>
+              <li
+                key={p.id}
+                className="flex items-center gap-2 rounded-3xl border-2 border-foreground/5 bg-card p-4 shadow-clay-sm dark:border-white/10"
+              >
                 <Link
                   href={`/pelanggan/${p.id}`}
-                  className="flex items-center justify-between gap-3 rounded-3xl border-2 border-foreground/5 bg-card p-4 shadow-clay-sm transition-transform active:translate-y-0.5 active:shadow-clay-pressed dark:border-white/10"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-heading text-[15px] font-semibold">
@@ -98,6 +133,42 @@ export function PelangganList({ data }: { data: PelangganDenganSaldo[] }) {
                     </span>
                   </div>
                 </Link>
+
+                {lunas && (
+                  <AlertDialog>
+                    <AlertDialogTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        />
+                      }
+                    >
+                      <Trash2 />
+                      <span className="sr-only">Hapus {p.nama}</span>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus {p.nama}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Seluruh riwayat transaksi pelanggan ini akan ikut
+                          terhapus permanen. Tindakan ini tidak bisa
+                          dibatalkan.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={deletingId === p.id}
+                          onClick={() => handleDelete(p.id, p.nama)}
+                        >
+                          {deletingId === p.id ? "Menghapus..." : "Hapus"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </li>
             );
           })}
